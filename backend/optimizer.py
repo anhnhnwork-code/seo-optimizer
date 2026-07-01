@@ -5,6 +5,79 @@ from bs4 import BeautifulSoup
 from ai_optimizer import get_client
 
 
+def parse_manual_content(content: str, index: int) -> dict:
+    """Parse manually pasted content (plain text or HTML)."""
+    soup = BeautifulSoup(content, "html.parser")
+    has_html = bool(soup.find())
+
+    if has_html:
+        for tag in soup(["script", "style", "nav", "footer", "header", "aside"]):
+            tag.decompose()
+        title_tag = soup.find("h1")
+        h2s = [h.get_text(strip=True) for h in soup.find_all("h2")]
+        h3s = [h.get_text(strip=True) for h in soup.find_all("h3")]
+        text = soup.get_text(separator=" ", strip=True)
+        has_faq = bool(soup.find(["details", "summary"])) or bool(
+            re.search(r"câu hỏi|faq|thường gặp", text.lower())
+        )
+        has_table = bool(soup.find("table"))
+        has_list = bool(soup.find(["ul", "ol"]))
+        ext_links = [a["href"] for a in soup.find_all("a", href=True) if a["href"].startswith("http")]
+        sections = []
+        for h2 in soup.find_all("h2"):
+            section_text = []
+            for sib in h2.next_siblings:
+                if sib.name == "h2":
+                    break
+                if hasattr(sib, "get_text"):
+                    section_text.append(sib.get_text(separator=" ", strip=True))
+            sections.append({"heading": h2.get_text(strip=True), "words": len(" ".join(section_text).split())})
+        title = title_tag.get_text(strip=True) if title_tag else (h2s[0] if h2s else "")
+        ext_count = len(ext_links)
+    else:
+        lines = content.splitlines()
+        text = content
+        h1_lines = [l.lstrip("#").strip() for l in lines if re.match(r"^#\s", l) and not re.match(r"^##", l)]
+        h2s = [l.lstrip("#").strip() for l in lines if re.match(r"^##\s", l) and not re.match(r"^###", l)]
+        h3s = [l.lstrip("#").strip() for l in lines if re.match(r"^###\s", l)]
+        title = h1_lines[0] if h1_lines else (lines[0].strip() if lines else "")
+        has_faq = bool(re.search(r"câu hỏi|faq|thường gặp", text.lower()))
+        has_table = bool(re.search(r"\|.+\|", text))
+        has_list = bool(re.search(r"^\s*[-*•]\s+", text, re.MULTILINE))
+        ext_count = len(re.findall(r"https?://\S+", text))
+        sections = []
+        current_h2, current_words = None, []
+        for line in lines:
+            if re.match(r"^##\s", line) and not re.match(r"^###", line):
+                if current_h2:
+                    sections.append({"heading": current_h2, "words": len(" ".join(current_words).split())})
+                current_h2 = line.lstrip("#").strip()
+                current_words = []
+            elif current_h2:
+                current_words.append(line)
+        if current_h2:
+            sections.append({"heading": current_h2, "words": len(" ".join(current_words).split())})
+
+    word_count = len(text.split())
+    has_stats = bool(re.search(r"\d+[\.,]?\d*\s*%|\d+\s*(triệu|tỷ|nghìn|người|năm)", text))
+
+    return {
+        "url": f"Nội dung paste #{index}",
+        "source": "manual",
+        "title": title,
+        "h2s": h2s,
+        "h3s": h3s,
+        "word_count": word_count,
+        "sections": sections,
+        "has_faq": has_faq,
+        "has_table": has_table,
+        "has_list": has_list,
+        "has_stats": has_stats,
+        "external_links_count": ext_count,
+        "text_snippet": text[:1500],
+    }
+
+
 def crawl_competitor(url: str) -> dict | None:
     """Fetch and extract key SEO signals from a competitor URL."""
     try:
@@ -150,11 +223,23 @@ Trả về JSON (chỉ JSON, không có text khác):
 }}"""
 
 
-def optimize_article(article: dict, competitor_urls: list[str], api_key: str = "") -> dict:
-    # Crawl all competitors
-    competitors = [crawl_competitor(url) for url in competitor_urls if url.strip()]
+def optimize_article(article: dict, competitors_input: list[dict], api_key: str = "") -> dict:
+    competitors = []
+    manual_index = 1
+    for item in competitors_input:
+        url = item.get("url", "").strip()
+        manual = item.get("manual_content", "").strip()
+        if manual:
+            competitors.append(parse_manual_content(manual, manual_index))
+            manual_index += 1
+        elif url:
+            competitors.append(crawl_competitor(url))
 
-    prompt = build_optimize_prompt(article, [c for c in competitors if c])
+    competitors = [c for c in competitors if c]
+    if not competitors:
+        return {"error": "Không có dữ liệu đối thủ hợp lệ"}
+
+    prompt = build_optimize_prompt(article, competitors)
 
     try:
         client = get_client(api_key)
@@ -170,8 +255,13 @@ def optimize_article(article: dict, competitor_urls: list[str], api_key: str = "
             raw = raw.split("```")[1].split("```")[0]
         result = json.loads(raw.strip())
         result["competitors_crawled"] = [
-            {"url": c.get("url"), "ok": "error" not in c, "word_count": c.get("word_count")}
-            for c in competitors if c
+            {
+                "url": c.get("url"),
+                "ok": "error" not in c,
+                "word_count": c.get("word_count"),
+                "source": c.get("source", "url"),
+            }
+            for c in competitors
         ]
         return result
     except Exception as e:

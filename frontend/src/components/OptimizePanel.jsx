@@ -1,33 +1,50 @@
 import { useState } from 'react'
 import axios from 'axios'
 
-const API = 'http://localhost:8000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const PRIORITY_CONFIG = {
-  high:   { label: 'Ưu tiên cao',   color: 'bg-red-50 border-red-200',    dot: 'bg-red-500',    text: 'text-red-700'   },
+  high:   { label: 'Ưu tiên cao',   color: 'bg-red-50 border-red-200',       dot: 'bg-red-500',    text: 'text-red-700'   },
   medium: { label: 'Ưu tiên trung', color: 'bg-yellow-50 border-yellow-200', dot: 'bg-yellow-500', text: 'text-yellow-700' },
-  low:    { label: 'Bổ sung thêm',  color: 'bg-green-50 border-green-200', dot: 'bg-green-500',  text: 'text-green-700' },
+  low:    { label: 'Bổ sung thêm',  color: 'bg-green-50 border-green-200',   dot: 'bg-green-500',  text: 'text-green-700' },
 }
 
+const EMPTY_COMPETITOR = () => ({ mode: 'url', url: '', content: '' })
+
 export default function OptimizePanel({ form, apiKey, onNeedApiKey }) {
-  const [urls, setUrls] = useState(['', '', ''])
+  const [competitors, setCompetitors] = useState(() => Array.from({ length: 5 }, EMPTY_COMPETITOR))
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [expandedRewrite, setExpandedRewrite] = useState(null)
 
-  const setUrl = (i, v) => setUrls(u => u.map((x, j) => j === i ? v : x))
+  const updateCompetitor = (i, patch) =>
+    setCompetitors(cs => cs.map((c, j) => j === i ? { ...c, ...patch } : c))
 
   const run = async () => {
     if (!apiKey) { onNeedApiKey(); return }
-    const validUrls = urls.filter(u => u.trim().startsWith('http'))
-    if (!validUrls.length) { setError('Nhập ít nhất 1 URL đối thủ hợp lệ (bắt đầu bằng http)'); return }
-    if (!form.content && !form.h1) { setError('Vui lòng nhập nội dung bài viết ở tab Thông tin trước'); return }
+    if (!form.content && !form.h1) {
+      setError('Vui lòng nhập nội dung bài viết ở tab Thông tin trước')
+      return
+    }
+
+    const payload = competitors
+      .map(c => ({
+        url: c.mode === 'url' ? c.url.trim() : '',
+        manual_content: c.mode === 'paste' ? c.content.trim() : '',
+      }))
+      .filter(c => c.url.startsWith('http') || c.manual_content.length > 50)
+
+    if (!payload.length) {
+      setError('Nhập ít nhất 1 URL hợp lệ (bắt đầu bằng http) hoặc paste tối thiểu 50 ký tự nội dung đối thủ')
+      return
+    }
+
     setError(''); setLoading(true); setResult(null)
     try {
       const { data } = await axios.post(`${API}/optimize`, {
         article: form,
-        competitor_urls: validUrls,
+        competitors: payload,
         api_key: apiKey,
       })
       setResult(data)
@@ -42,24 +59,23 @@ export default function OptimizePanel({ form, apiKey, onNeedApiKey }) {
 
   return (
     <div className="space-y-4">
-      {/* URL inputs */}
+      {/* Competitor inputs */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
         <div>
           <h2 className="font-semibold text-slate-800 text-base">Phân tích đối thủ & Đề xuất tối ưu</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Nhập URL đối thủ đang top 1–5 cho từ khóa của bạn</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Nhập URL hoặc paste nội dung của đối thủ đang top 1–5 cho từ khóa của bạn
+          </p>
         </div>
 
-        <div className="space-y-2">
-          {urls.map((url, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 w-5 text-right">{i + 1}.</span>
-              <input
-                className="input-base flex-1"
-                placeholder={`https://example.com/bai-viet-doi-thu-${i + 1}`}
-                value={url}
-                onChange={e => setUrl(i, e.target.value)}
-              />
-            </div>
+        <div className="space-y-3">
+          {competitors.map((comp, i) => (
+            <CompetitorSlot
+              key={i}
+              index={i}
+              comp={comp}
+              onChange={patch => updateCompetitor(i, patch)}
+            />
           ))}
         </div>
 
@@ -74,7 +90,7 @@ export default function OptimizePanel({ form, apiKey, onNeedApiKey }) {
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
-              <Spinner /> Đang crawl đối thủ & phân tích…
+              <Spinner /> Đang xử lý đối thủ & phân tích…
             </span>
           ) : '🚀 Phân tích & Đề xuất tối ưu'}
         </button>
@@ -83,13 +99,16 @@ export default function OptimizePanel({ form, apiKey, onNeedApiKey }) {
       {/* Results */}
       {result && (
         <>
-          {/* Crawl status */}
+          {/* Source status */}
           {result.competitors_crawled && (
             <div className="bg-slate-50 rounded-xl border border-slate-200 px-4 py-3 flex flex-wrap gap-3">
               {result.competitors_crawled.map((c, i) => (
                 <div key={i} className="flex items-center gap-1.5 text-xs">
                   <span className={c.ok ? 'text-green-600' : 'text-red-500'}>{c.ok ? '✓' : '✗'}</span>
-                  <span className="text-slate-600 max-w-[180px] truncate">{c.url}</span>
+                  {c.source === 'manual'
+                    ? <span className="text-violet-600 font-medium">{c.url}</span>
+                    : <span className="text-slate-600 max-w-[180px] truncate">{c.url}</span>
+                  }
                   {c.ok && <span className="text-slate-400">({c.word_count?.toLocaleString()} từ)</span>}
                 </div>
               ))}
@@ -163,6 +182,63 @@ export default function OptimizePanel({ form, apiKey, onNeedApiKey }) {
   )
 }
 
+function CompetitorSlot({ index, comp, onChange }) {
+  return (
+    <div className="border border-slate-200 rounded-xl overflow-hidden">
+      {/* Header row: number + toggle */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200">
+        <span className="text-xs font-semibold text-slate-500 w-5 text-center">{index + 1}</span>
+        <div className="flex rounded-lg overflow-hidden border border-slate-200 text-xs font-medium">
+          <button
+            onClick={() => onChange({ mode: 'url' })}
+            className={`px-3 py-1 transition-colors ${
+              comp.mode === 'url'
+                ? 'bg-slate-800 text-white'
+                : 'bg-white text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            URL
+          </button>
+          <button
+            onClick={() => onChange({ mode: 'paste' })}
+            className={`px-3 py-1 transition-colors border-l border-slate-200 ${
+              comp.mode === 'paste'
+                ? 'bg-slate-800 text-white'
+                : 'bg-white text-slate-500 hover:bg-slate-100'
+            }`}
+          >
+            Paste nội dung
+          </button>
+        </div>
+        {comp.mode === 'paste' && comp.content && (
+          <span className="text-[10px] text-slate-400 ml-auto">
+            {comp.content.trim().split(/\s+/).length.toLocaleString()} từ
+          </span>
+        )}
+      </div>
+
+      {/* Input area */}
+      <div className="p-2">
+        {comp.mode === 'url' ? (
+          <input
+            className="input-base w-full"
+            placeholder={`https://example.com/bai-viet-doi-thu-${index + 1}`}
+            value={comp.url}
+            onChange={e => onChange({ url: e.target.value })}
+          />
+        ) : (
+          <textarea
+            className="input-base w-full resize-y min-h-[100px] font-mono text-xs leading-relaxed"
+            placeholder={`Paste toàn bộ nội dung bài viết đối thủ ${index + 1} vào đây.\nHỗ trợ cả văn bản thuần và HTML từ editor/CMS.`}
+            value={comp.content}
+            onChange={e => onChange({ content: e.target.value })}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
 function GapAnalysis({ gaps }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
@@ -171,17 +247,17 @@ function GapAnalysis({ gaps }) {
       </div>
       <div className="p-5 grid grid-cols-1 gap-4">
         {gaps.missing_sections?.length > 0 && (
-          <GapSection title="Section/Heading còn thiếu" icon="📑" color="red">
+          <GapSection title="Section/Heading còn thiếu" icon="📑">
             {gaps.missing_sections.map((s, i) => <Pill key={i}>{s}</Pill>)}
           </GapSection>
         )}
         {gaps.missing_keywords?.length > 0 && (
-          <GapSection title="Từ khóa semantic/LSI chưa có" icon="🔑" color="blue">
+          <GapSection title="Từ khóa semantic/LSI chưa có" icon="🔑">
             {gaps.missing_keywords.map((k, i) => <Pill key={i} blue>{k}</Pill>)}
           </GapSection>
         )}
         {gaps.depth_gaps?.length > 0 && (
-          <GapSection title="Phần cần viết sâu hơn" icon="📏" color="yellow">
+          <GapSection title="Phần cần viết sâu hơn" icon="📏">
             {gaps.depth_gaps.map((d, i) => (
               <div key={i} className="text-xs bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
                 <p className="font-medium text-yellow-800">"{d.section}"</p>
@@ -194,12 +270,12 @@ function GapAnalysis({ gaps }) {
           </GapSection>
         )}
         {gaps.format_gaps?.length > 0 && (
-          <GapSection title="Loại nội dung đặc biệt còn thiếu" icon="🧩" color="purple">
+          <GapSection title="Loại nội dung đặc biệt còn thiếu" icon="🧩">
             {gaps.format_gaps.map((f, i) => <Pill key={i} purple>{f}</Pill>)}
           </GapSection>
         )}
         {gaps.eeat_gaps?.length > 0 && (
-          <GapSection title="E-E-A-T cần cải thiện" icon="🏅" color="green">
+          <GapSection title="E-E-A-T cần cải thiện" icon="🏅">
             {gaps.eeat_gaps.map((e, i) => <Pill key={i} green>{e}</Pill>)}
           </GapSection>
         )}
@@ -218,9 +294,9 @@ function GapSection({ title, icon, children }) {
 }
 
 function Pill({ children, blue, purple, green }) {
-  const cls = blue ? 'bg-blue-50 text-blue-700 border-blue-200'
+  const cls = blue   ? 'bg-blue-50 text-blue-700 border-blue-200'
     : purple ? 'bg-purple-50 text-purple-700 border-purple-200'
-    : green ? 'bg-green-50 text-green-700 border-green-200'
+    : green  ? 'bg-green-50 text-green-700 border-green-200'
     : 'bg-red-50 text-red-700 border-red-200'
   return (
     <span className={`text-xs border rounded-lg px-2.5 py-1 font-medium ${cls}`}>{children}</span>

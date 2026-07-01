@@ -32,9 +32,14 @@ class AIAnalyzeRequest(BaseModel):
     api_key: str = ""
 
 
+class CompetitorInput(BaseModel):
+    url: str = ""
+    manual_content: str = ""
+
+
 class OptimizeRequest(BaseModel):
     article: ArticleData
-    competitor_urls: list[str] = []
+    competitors: list[CompetitorInput] = []
     api_key: str = ""
 
 
@@ -69,10 +74,15 @@ def optimize_endpoint(req: OptimizeRequest):
     soup = BeautifulSoup(data_dict["content"], "html.parser")
     data_dict["content_text"] = soup.get_text(separator=" ", strip=True)
 
-    if not req.competitor_urls:
-        raise HTTPException(status_code=400, detail="Cần ít nhất 1 URL đối thủ")
+    valid = [c for c in req.competitors if c.url.strip() or c.manual_content.strip()]
+    if not valid:
+        raise HTTPException(status_code=400, detail="Cần ít nhất 1 URL đối thủ hoặc nội dung paste")
 
-    result = optimize_article(data_dict, req.competitor_urls, api_key=req.api_key)
+    result = optimize_article(
+        data_dict,
+        [c.model_dump() for c in valid],
+        api_key=req.api_key,
+    )
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])

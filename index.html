@@ -127,12 +127,84 @@
       <div class="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
         <div>
           <h3 class="font-semibold text-slate-800">Phân tích đối thủ & Đề xuất tối ưu</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Nhập URL đối thủ đang top 1–5 cho từ khóa của bạn</p>
+          <p class="text-xs text-slate-400 mt-0.5">Nhập URL hoặc paste nội dung của đối thủ đang top 1–5 cho từ khóa của bạn</p>
         </div>
-        <div class="space-y-2">
-          <div class="flex gap-2 items-center"><span class="text-xs text-slate-400 w-5 text-right">1.</span><input id="url1" class="input-field flex-1" placeholder="https://example.com/bai-doi-thu-1"></div>
-          <div class="flex gap-2 items-center"><span class="text-xs text-slate-400 w-5 text-right">2.</span><input id="url2" class="input-field flex-1" placeholder="https://example.com/bai-doi-thu-2"></div>
-          <div class="flex gap-2 items-center"><span class="text-xs text-slate-400 w-5 text-right">3.</span><input id="url3" class="input-field flex-1" placeholder="https://example.com/bai-doi-thu-3"></div>
+        <div class="space-y-3">
+          <!-- Slot 1 -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200">
+              <span class="text-xs font-semibold text-slate-500 w-5 text-center">1</span>
+              <div class="flex rounded-lg overflow-hidden border border-slate-200 text-xs font-medium">
+                <button onclick="setMode(1,'url')" id="modeUrl1" class="px-3 py-1 bg-slate-800 text-white">URL</button>
+                <button onclick="setMode(1,'paste')" id="modePaste1" class="px-3 py-1 border-l border-slate-200 bg-white text-slate-500 hover:bg-slate-100">Paste nội dung</button>
+              </div>
+              <span id="wc1" class="text-[10px] text-slate-400 ml-auto hidden"></span>
+            </div>
+            <div class="p-2">
+              <input id="url1" class="input-field w-full" placeholder="https://example.com/bai-doi-thu-1">
+              <textarea id="paste1" class="input-field w-full hidden resize-y min-h-[100px] font-mono text-xs leading-relaxed" placeholder="Paste toàn bộ nội dung bài viết đối thủ 1 vào đây.&#10;Hỗ trợ cả văn bản thuần và HTML từ editor/CMS." oninput="updatePasteCount(1)"></textarea>
+            </div>
+          </div>
+          <!-- Slot 2 -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200">
+              <span class="text-xs font-semibold text-slate-500 w-5 text-center">2</span>
+              <div class="flex rounded-lg overflow-hidden border border-slate-200 text-xs font-medium">
+                <button onclick="setMode(2,'url')" id="modeUrl2" class="px-3 py-1 bg-slate-800 text-white">URL</button>
+                <button onclick="setMode(2,'paste')" id="modePaste2" class="px-3 py-1 border-l border-slate-200 bg-white text-slate-500 hover:bg-slate-100">Paste nội dung</button>
+              </div>
+              <span id="wc2" class="text-[10px] text-slate-400 ml-auto hidden"></span>
+            </div>
+            <div class="p-2">
+              <input id="url2" class="input-field w-full" placeholder="https://example.com/bai-doi-thu-2">
+              <textarea id="paste2" class="input-field w-full hidden resize-y min-h-[100px] font-mono text-xs leading-relaxed" placeholder="Paste toàn bộ nội dung bài viết đối thủ 2 vào đây.&#10;Hỗ trợ cả văn bản thuần và HTML từ editor/CMS." oninput="updatePasteCount(2)"></textarea>
+            </div>
+          </div>
+          <!-- Slot 3 -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200">
+              <span class="text-xs font-semibold text-slate-500 w-5 text-center">3</span>
+              <div class="flex rounded-lg overflow-hidden border border-slate-200 text-xs font-medium">
+                <button onclick="setMode(3,'url')" id="modeUrl3" class="px-3 py-1 bg-slate-800 text-white">URL</button>
+                <button onclick="setMode(3,'paste')" id="modePaste3" class="px-3 py-1 border-l border-slate-200 bg-white text-slate-500 hover:bg-slate-100">Paste nội dung</button>
+              </div>
+              <span id="wc3" class="text-[10px] text-slate-400 ml-auto hidden"></span>
+            </div>
+            <div class="p-2">
+              <input id="url3" class="input-field w-full" placeholder="https://example.com/bai-doi-thu-3">
+              <textarea id="paste3" class="input-field w-full hidden resize-y min-h-[100px] font-mono text-xs leading-relaxed" placeholder="Paste toàn bộ nội dung bài viết đối thủ 3 vào đây.&#10;Hỗ trợ cả văn bản thuần và HTML từ editor/CMS." oninput="updatePasteCount(3)"></textarea>
+            </div>
+          </div>
+          <!-- Slot 4 -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200">
+              <span class="text-xs font-semibold text-slate-500 w-5 text-center">4</span>
+              <div class="flex rounded-lg overflow-hidden border border-slate-200 text-xs font-medium">
+                <button onclick="setMode(4,'url')" id="modeUrl4" class="px-3 py-1 bg-slate-800 text-white">URL</button>
+                <button onclick="setMode(4,'paste')" id="modePaste4" class="px-3 py-1 border-l border-slate-200 bg-white text-slate-500 hover:bg-slate-100">Paste nội dung</button>
+              </div>
+              <span id="wc4" class="text-[10px] text-slate-400 ml-auto hidden"></span>
+            </div>
+            <div class="p-2">
+              <input id="url4" class="input-field w-full" placeholder="https://example.com/bai-doi-thu-4">
+              <textarea id="paste4" class="input-field w-full hidden resize-y min-h-[100px] font-mono text-xs leading-relaxed" placeholder="Paste toàn bộ nội dung bài viết đối thủ 4 vào đây.&#10;Hỗ trợ cả văn bản thuần và HTML từ editor/CMS." oninput="updatePasteCount(4)"></textarea>
+            </div>
+          </div>
+          <!-- Slot 5 -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="flex items-center gap-2 px-3 py-2 bg-slate-50 border-b border-slate-200">
+              <span class="text-xs font-semibold text-slate-500 w-5 text-center">5</span>
+              <div class="flex rounded-lg overflow-hidden border border-slate-200 text-xs font-medium">
+                <button onclick="setMode(5,'url')" id="modeUrl5" class="px-3 py-1 bg-slate-800 text-white">URL</button>
+                <button onclick="setMode(5,'paste')" id="modePaste5" class="px-3 py-1 border-l border-slate-200 bg-white text-slate-500 hover:bg-slate-100">Paste nội dung</button>
+              </div>
+              <span id="wc5" class="text-[10px] text-slate-400 ml-auto hidden"></span>
+            </div>
+            <div class="p-2">
+              <input id="url5" class="input-field w-full" placeholder="https://example.com/bai-doi-thu-5">
+              <textarea id="paste5" class="input-field w-full hidden resize-y min-h-[100px] font-mono text-xs leading-relaxed" placeholder="Paste toàn bộ nội dung bài viết đối thủ 5 vào đây.&#10;Hỗ trợ cả văn bản thuần và HTML từ editor/CMS." oninput="updatePasteCount(5)"></textarea>
+            </div>
+          </div>
         </div>
         <div id="optErr" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></div>
         <button id="optBtn" onclick="runOptimize()" class="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-medium py-2.5 rounded-xl text-sm">🚀 Phân tích & Đề xuất tối ưu</button>
@@ -353,6 +425,73 @@ async function crawlURL(url) {
   }
 }
 
+// ─── COMPETITOR MODE TOGGLE ──────────────────────────────────────
+const competitorModes = [1,2,3,4,5].reduce((a,i) => { a[i]='url'; return a }, {})
+
+function setMode(i, mode) {
+  competitorModes[i] = mode
+  const isUrl = mode === 'url'
+  document.getElementById(`url${i}`).classList.toggle('hidden', !isUrl)
+  document.getElementById(`paste${i}`).classList.toggle('hidden', isUrl)
+  document.getElementById(`modeUrl${i}`).className = isUrl
+    ? 'px-3 py-1 bg-slate-800 text-white'
+    : 'px-3 py-1 bg-white text-slate-500 hover:bg-slate-100'
+  document.getElementById(`modePaste${i}`).className = isUrl
+    ? 'px-3 py-1 border-l border-slate-200 bg-white text-slate-500 hover:bg-slate-100'
+    : 'px-3 py-1 border-l border-slate-200 bg-slate-800 text-white'
+  document.getElementById(`wc${i}`).classList.add('hidden')
+}
+
+function updatePasteCount(i) {
+  const content = document.getElementById(`paste${i}`).value.trim()
+  const el = document.getElementById(`wc${i}`)
+  if (content) {
+    el.textContent = content.split(/\s+/).filter(Boolean).length.toLocaleString() + ' từ'
+    el.classList.remove('hidden')
+  } else {
+    el.classList.add('hidden')
+  }
+}
+
+function parseManualContent(content, index) {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(content, 'text/html')
+  const hasHtml = Array.from(doc.body.childNodes).some(n => n.nodeType === 1)
+
+  let h1, h2s, h3s, text, hasFaq, hasTable, hasStats, extLinks
+
+  if (hasHtml) {
+    ;['script','style','nav','footer','header','aside'].forEach(t => doc.querySelectorAll(t).forEach(e => e.remove()))
+    h1 = doc.querySelector('h1')?.innerText?.trim() || ''
+    h2s = Array.from(doc.querySelectorAll('h2')).map(h => h.innerText.trim()).slice(0, 10)
+    h3s = Array.from(doc.querySelectorAll('h3')).map(h => h.innerText.trim()).slice(0, 6)
+    text = doc.body?.innerText || ''
+    hasFaq = /câu hỏi|faq|thường gặp/i.test(text) || !!doc.querySelector('details,summary')
+    hasTable = !!doc.querySelector('table')
+    hasStats = /\d+[\.,]?\d*\s*%|\d+\s*(triệu|tỷ|nghìn|người)/i.test(text)
+    extLinks = Array.from(doc.querySelectorAll('a[href]')).filter(a => a.getAttribute('href')?.startsWith('http')).length
+  } else {
+    const lines = content.split('\n')
+    text = content
+    h1 = (lines.find(l => /^#\s/.test(l) && !/^##/.test(l)) || '').replace(/^#+\s+/, '') || lines[0]?.trim() || ''
+    h2s = lines.filter(l => /^##\s/.test(l) && !/^###/.test(l)).map(l => l.replace(/^#+\s+/, ''))
+    h3s = lines.filter(l => /^###\s/.test(l)).map(l => l.replace(/^#+\s+/, ''))
+    hasFaq = /câu hỏi|faq|thường gặp/i.test(text)
+    hasTable = /\|.+\|/.test(text)
+    hasStats = /\d+[\.,]?\d*\s*%|\d+\s*(triệu|tỷ|nghìn|người)/i.test(text)
+    extLinks = (text.match(/https?:\/\/\S+/g) || []).length
+  }
+
+  return {
+    url: `Nội dung paste #${index}`,
+    source: 'manual',
+    h1, h2s, h3s,
+    wordCount: text.split(/\s+/).filter(Boolean).length,
+    hasFaq, hasTable, hasStats, extLinks,
+    snippet: text.slice(0, 600),
+  }
+}
+
 // ─── MAIN FLOWS ──────────────────────────────────────────────────
 function getForm() {
   return {
@@ -410,25 +549,52 @@ Trả về JSON (chỉ JSON, không text khác):
 async function runOptimize() {
   if (!apiKey) { openKeyModal(); return }
   const f = getForm()
-  const urls = ['url1','url2','url3'].map(id=>document.getElementById(id).value.trim()).filter(u=>u.startsWith('http'))
-  if (!urls.length) { showErr('optErr','Nhập ít nhất 1 URL đối thủ hợp lệ (bắt đầu bằng http)'); return }
   if (!f.content && !f.h1) { showErr('optErr','Vui lòng nhập nội dung bài viết trước'); return }
+
+  // Collect valid inputs from all 5 slots
+  const inputs = []
+  for (let i = 1; i <= 5; i++) {
+    const mode = competitorModes[i]
+    if (mode === 'url') {
+      const url = document.getElementById(`url${i}`).value.trim()
+      if (url.startsWith('http')) inputs.push({ type: 'url', value: url })
+    } else {
+      const content = document.getElementById(`paste${i}`).value.trim()
+      if (content.length > 50) inputs.push({ type: 'paste', value: content })
+    }
+  }
+
+  if (!inputs.length) {
+    showErr('optErr','Nhập ít nhất 1 URL hợp lệ (bắt đầu bằng http) hoặc paste tối thiểu 50 ký tự nội dung đối thủ')
+    return
+  }
   hideErr('optErr')
-  setLoading('optBtn', true, '⏳ Đang crawl đối thủ & phân tích…')
+  setLoading('optBtn', true, '⏳ Đang xử lý đối thủ & phân tích…')
   document.getElementById('optResults').innerHTML = ''
 
   try {
-    const settled = await Promise.allSettled(urls.map(crawlURL))
-    const comps = settled.map((r,i) => r.status==='fulfilled' ? r.value : { url: urls[i], error: r.reason?.message || 'Lỗi' })
+    const urlInputs  = inputs.filter(c => c.type === 'url')
+    const pasteInputs = inputs.filter(c => c.type === 'paste')
 
-    const compText = comps.map((c,i) => c.error
+    const urlResults = await Promise.allSettled(urlInputs.map(c => crawlURL(c.value)))
+    const urlData = urlResults.map((r, i) =>
+      r.status === 'fulfilled' ? r.value : { url: urlInputs[i].value, error: r.reason?.message || 'Lỗi' }
+    )
+
+    let pasteIndex = 1
+    let urlIndex = 0
+    const comps = inputs.map(c =>
+      c.type === 'url' ? urlData[urlIndex++] : parseManualContent(c.value, pasteIndex++)
+    )
+
+    const compText = comps.map((c, i) => c.error
       ? `Đối thủ ${i+1} (${c.url}): Lỗi — ${c.error}`
       : `Đối thủ ${i+1} (${c.url}):
 - H1: ${c.h1}
-- H2: ${c.h2s.join(', ')}
-- H3: ${c.h3s.join(', ')}
+- H2: ${(c.h2s||[]).join(', ')}
+- H3: ${(c.h3s||[]).join(', ')}
 - Số từ: ${c.wordCount} | FAQ: ${c.hasFaq?'✓':'✗'} | Bảng: ${c.hasTable?'✓':'✗'} | Số liệu: ${c.hasStats?'✓':'✗'}
-- Nội dung mẫu: ${c.snippet.slice(0,300)}`).join('\n\n')
+- Nội dung mẫu: ${c.snippet?.slice(0,300)}`).join('\n\n')
 
     const raw = await callClaude(`Bạn là chuyên gia SEO content người Việt, chuyên gap analysis để tăng ranking.
 
@@ -543,7 +709,7 @@ function buildAI(ai) {
 function renderOptimize(result, comps) {
   const crawlStatus = comps.map(c=>`<div class="flex items-center gap-1.5 text-xs">
     <span class="${c.error?'text-red-500':'text-green-600'}">${c.error?'✗':'✓'}</span>
-    <span class="text-slate-600 truncate max-w-[200px]">${c.url}</span>
+    <span class="${c.source==='manual'?'text-violet-600 font-medium':'text-slate-600 truncate max-w-[200px]'}">${c.url}</span>
     ${!c.error?`<span class="text-slate-400">(${c.wordCount?.toLocaleString()} từ)</span>`:c.error?`<span class="text-red-400">${c.error}</span>`:''}
   </div>`).join('')
 
